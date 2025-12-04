@@ -1,98 +1,250 @@
 #include <iostream>
-#include <numeric>
+#include <string>
+#include <algorithm>
+#include <iomanip>
+#include <cmath>
 
-class Fraction {
-private:
-    int numerator;
-    int denominator;
-
+class Player {
+protected:
+    float fatigue_level = 0.0f; // 0.0 (fresh) to 1.0 (exhausted)
+    std::string playerName;
+    
 public:
-    // Constructor
-    Fraction(int num = 0, int den = 1) : numerator(num), denominator(den) {
-        if (denominator == 0) {
-            std::cerr << "Error: Denominator cannot be zero. Setting to 1." << std::endl;
-            this->denominator = 1;
-        }
+    // Base parameterized constructor
+    Player(const std::string& name) : playerName(name) {
+        std::cout << "\nPlayer registered: " << name << "." << std::endl;
     }
-
-    // Member function overloads (Task 2, Task 4):
-
-    // Task 2: Compound assignment: F1 += F2
-    // Must return Fraction& to allow chaining (F1 += F2 += F3)
-    Fraction& operator+=(const Fraction& rhs) {
-        numerator = numerator * rhs.denominator + rhs.numerator * denominator;
-        denominator = denominator * rhs.denominator;
-        return *this; // allow chaining
-    }
-
-    // Task 4: Prefix increment: ++F
-    // Must return Fraction& and take no explicit parameters
-    Fraction& operator++() {
-		numerator += denominator;
-		return *this;
-    }
-
-    // Friend function declarations (required for non-member operators)
     
-    // Task 1: Binary addition: F1 + F2
-    /* Complete the declaration here. */
-    friend Fraction operator+(const Fraction& lhs, const Fraction& rhs);
-
-
-
-    // Task 3: Output stream: std::cout << F1
-    /* Complete the declaration here. */
-    friend std::ostream& operator<<(std::ostream& os, const Fraction& f);
+    // Base destructor
+    virtual ~Player() {
+        std::cout << "Base destructor: Player removed from system." << std::endl;
+    }
     
+    // Setter method for fatigue level
+    void updateFatigue(float exertion_factor) {
+        fatigue_level = std::min(1.0f, std::max(0.0f, fatigue_level + (exertion_factor * 0.1f)));
+        
+        std::cout << "--> Fatigue now: " << std::fixed << std::setprecision(1) << (fatigue_level * 100.0f) << "%" << std::endl;
+    }
+
+    // TASK 1: Implement the virtual base functions in the Player class.
+    // (1) shootingSuccessRate:
+    //     - Calculates the base rate using a standard formula and fatigue penalty.
+    //     - Formula: 0.5 * base_skill * (1 - fatigue_level)
+    //     - Return type: float
+	
+
+    // (2) tackleSuccessRate:
+    //     - Calculates the base rate, applying a less severe penalty for tackling.
+    //     - Formula: base_skill * (1.0f - (0.5f * fatigue_level))
+    //     - Return type: float
+
+    virtual float shootingSuccessRate(int base_skill) {
+        float success_rate = 0.5f * base_skill * (1.0f - fatigue_level);
+
+        std::cout << "Success rate -- Shooting: " << std::fixed << std::setprecision(2) << success_rate << "%" << std::endl;
+
+        return success_rate;
+    }
+
+    virtual float tackleSuccessRate(int base_skill) {
+        float success_rate = base_skill * (1.0f - (0.5f * fatigue_level));
+        
+        std::cout << "Success rate -- Tackle: " << std::fixed << std::setprecision(2) << success_rate << "%" << std::endl;
+        
+        return success_rate;
+	}
+
+    // END OF TASK 1
+
+
+    
+    
+    // TASK 2: Implement the two overloaded checkEnergy base functions in the Player class.
+    // (1) Overload for stamina (int):
+    //     - Calculates the effective stamina based on the full impact of fatigue.
+    //     - Formula: effective_stamina = base_stamina * (1 - fatigue_level)
+    //
+    // (2) Overload for hydration (float):
+    //     - Calculates the effective hydration based on the reduced impact of fatigue (0.5x).
+    //     - Formula: effective_hydration = base_hydration * (1.0f - (0.5f * fatigue_level))
+    
+  
+    void checkEnergy(int base_stamina) {
+
+        int effective_stamina = static_cast<int>(std::round(base_stamina * (1.0f - fatigue_level)));
+        std::cout << "Energy check -- Stamina: " << effective_stamina << " (Fatigue: " << std::fixed << std::setprecision(1) << (fatigue_level * 100.0f) << "%)" << std::endl;
+    }
+    
+    void checkEnergy(float base_hydration) {
+
+		float effective_hydration = base_hydration * (1.0f - (0.5f * fatigue_level));
+        std::cout << "Energy check -- Hydration: " << std::fixed << std::setprecision(2) << effective_hydration << "%" << std::endl;
+    }
+    
+    // END OF TASK 2
+
+
+    // Getter method
+    const std::string& getPlayerName() const { return playerName; }
 };
 
-// Non-member function definitions:
-
-// Task 1: Binary addition: F1 + F2
-// Returns a new Fraction object by value (T)
-Fraction operator+(const Fraction& lhs, const Fraction& rhs) {
-    int new_numer = (lhs.numerator * rhs.denominator) + (rhs.numerator * lhs.denominator);
-    int new_denom = (lhs.denominator * rhs.denominator);
-    return Fraction(new_numer, new_denom);
-}
-
-// Task 3: Output stream: std::cout << F1
-// Returns std::ostream& to allow chaining (cout << f1 << f2)
-std::ostream& operator<<(std::ostream& os, const Fraction& f) {
-	os << f.numerator << "/" << f.denominator;
-	return os;
-}
 
 
-// Main function
-int main() {
-    Fraction f1(1, 2);  // 1/2
-    Fraction f2(3, 4);  // 3/4
-    Fraction f3(1, 1);  // 1
+// TASK 3: Defender as a public derived class of Player
+// - Complete the class definition to inherit publicly from Player.
+// - Write the parameterized constructor that passes the name to the base class.
+
+class Defender : public Player{ // TASK 3 - Defender as a public derived class of Player
+
+public:
+	Defender(const std::string& name) : Player(name) { // TASK 3 - Constructor
+        std::cout << "Derived: Defender assigned." << std::endl;
+    }
+	// END OF TASK 3
+
     
-    std::cout << "Given fractions:" << std::endl;
-    std::cout << "   f1 = " << f1 << std::endl;
-    std::cout << "   f2 = " << f2 << std::endl;
-    std::cout << "   f3 = " << f3 << std::endl;
+    // TASK 4: Override virtual base functions for Defender specialization.
+    // (1) shootingSuccessRate:
+    //     - Applies a positional penalty for non-attacking roles.
+    //     - Formula: specialized_rate = base_rate x 0.8
+    //
+    // (2) tackleSuccessRate:
+    //     - Applies a large tactical bonus reflective of a primary defensive duty.
+    //     - Formula: specialized_rate = base_rate x 1.5
+    
+	float shootingSuccessRate(int base_skill) override { // Override the base function
 
-    // Task 1. Binary addition (+)
-    Fraction f_sum = f1 + f2;
-    std::cout << "Task 1: Binary addition (f1 + f2):" << std::endl;
-    std::cout << "   " << f1 << " + " << f2 << " = " << f_sum << " (Expected result: 10/8 or 5/4)" << std::endl;
+		float specialized_rate = 0.8f * (0.5f * base_skill * (1.0f - fatigue_level));
+        std::cout << "Success rate -- Shooting (Defender): " << std::fixed << std::setprecision(2) << specialized_rate << "%" << std::endl;
+        
+        return specialized_rate;
+    }
+    
+	float tackleSuccessRate(int base_skill) override { // Override the base function
 
-    // Task 2: Compound assignment (+=)
-    f3 += f1; // F3 is now 1 + 1/2 = 3/2
-    std::cout << "Task 2: Compound assignment (f3 += f1):" << std::endl;
-    std::cout << "   f3 is: " << f3 << " (Expected result: 3/2)" << std::endl;
+		float specialized_rate = 1.5f * (base_skill * (1.0f - (0.5f * fatigue_level)));
+        std::cout << "Success rate -- Tackle (Defender): " << std::fixed << std::setprecision(2) << specialized_rate << "%" << std::endl;
+        
+        return specialized_rate;
+    }
 
-    Fraction f4(1, 8);
-    f3 += (f4 += Fraction(1, 8)); // f4 becomes 2/8, then f3 adds 2/8 (3/2 + 2/8 = 14/8)
-    std::cout << "   Chaining operation works! f3 += (f4 += 1/8) -> f3 is now: " << f3 << std::endl;
+	// END OF TASK 4
+    
 
-    // Task 4: Prefix increment (++)
-    std::cout << "Task 4: Prefix increment (++f2):" << std::endl;
-    std::cout << "   ++f2 is: " << ++f2 << std::endl; // F2 is now 3/4 + 1 = 7/4
-    std::cout << "   f2 value after: " << f2 << std::endl;
+    // TASK 5: Bring the base function overloads available in the Defender class.
+    /* Write down the code here */
+	using Player::checkEnergy;
+
+	// END OF TASK 5
+
+};
+
+
+// TASK 6: Striker as a public derived class of Player
+// - Complete the class definition to inherit publicly from Player.
+// - Write the parameterized constructor that passes the name to the base class.
+
+class Striker : public Player { // TASK 6 - Striker as a public derived class of Player
+public:
+	Striker(const std::string& name) : Player(name) { // TASK 6 - Constructor
+        std::cout << "Derived: Striker assigned." << std::endl;
+    }
+
+	// END OF TASK 6
+
+    
+    // TASK 7: Override virtual base functions for Striker specialization.
+    // (1) shootingSuccessRate:
+    //     - Applies a high positional bonus, which reflects the primary scoring duty.
+    //     - Formula: specialized_rate = base_rate x 2
+    //
+    // (2) tackleSuccessRate:
+    //     - Applies a high penalty reflective of low defensive contribution.
+    //     - Formula: specialized_rate = base_rate x 0.5
+    
+	float shootingSuccessRate(int base_skill) override { // Override the base function
+
+		float specialized_rate = 2.0f * (0.5f * base_skill * (1.0f - fatigue_level));
+        std::cout << "Success rate -- Shooting (Striker): " << std::fixed << std::setprecision(2) << specialized_rate << "%" << std::endl;
+        
+        return specialized_rate;
+    }
+   
+
+    float tackleSuccessRate(int base_skill) override { // Override the base function
+
+		float specialized_rate = 0.5f * (base_skill * (1.0f - (0.5f * fatigue_level)));
+        std::cout << "Success rate -- Tackle (Striker): " << std::fixed << std::setprecision(2) << specialized_rate << "%" << std::endl;
+        
+        return specialized_rate;
+    }
+
+	// END OF TASK 7
+
+    
+    // TASK 8: Bring the base function overloads available in the Striker class.
+    /* Write down the code here */
+	using Player::checkEnergy;
+
+	// END OF TASK 8
+
+};
+
+
+int main() {
+    int base_skill_value = 60;
+    int base_stamina_value = 90;
+    float base_hydration_value = 95.0f;
+        
+    // TASK 9:
+    // - Create a Defender object pointer with the name "Minjae Kim" by using the 'new' keyword.
+    // - Check the object's energy (stamina and hydration) based on the provided base values.
+    // - Check the object's tackle success rate based on the base_skill_value.
+    
+	Defender* defender = new Defender("Minjae Kim");
+	defender->checkEnergy(base_stamina_value);
+    defender->checkEnergy(base_hydration_value);
+	defender->tackleSuccessRate(base_skill_value);
+
+    
+    std::cout << "\n[Action -- Heavy run]" << std::endl;
+    // TASK 10:
+    // - Update fatigue level to 0.5 (using the updateFatigue method).
+    // - Check the object's new energy (stamina and hydration) based on the base values.
+    // - Check the new tackle success rate based on the base_skill_value (it should be lower).
+    // - Finally, delete the object using the 'delete' keyword.
+    
+	defender->updateFatigue(0.5f);
+	defender->checkEnergy(base_stamina_value);
+	defender->checkEnergy(base_hydration_value);
+	defender->tackleSuccessRate(base_skill_value);
+	delete defender;
+
+    
+    // TASK 11:
+    // - Create a Striker object pointer with the name "Heungmin Son" by using the 'new' keyword.
+    // - Check the object's energy (stamina and hydration) based on the provided base values.
+    // - Check the object's shooting success rate based on the base_skill_value.
+    
+	Striker* striker = new Striker("Heungmin Son");
+	striker->checkEnergy(base_stamina_value);
+	striker->checkEnergy(base_hydration_value);
+	striker->shootingSuccessRate(base_skill_value);
+    
+    std::cout << "\n[Action -- Moderate sprint]" << std::endl;
+    // TASK 12:
+    // - Update fatigue level to 0.3 (using the updateFatigue method).
+    // - Check the object's new energy (stamina and hydration) based on the base values.
+    // - Check the new shooting success rate based on the base_skill_value (it should be lower).
+    // - Finally, delete the object using the 'delete' keyword.
+    
+	striker->updateFatigue(0.3f);
+	striker->checkEnergy(base_stamina_value);
+	striker->checkEnergy(base_hydration_value);
+	striker->shootingSuccessRate(base_skill_value);
+	delete striker;
+
     
     return 0;
 }
